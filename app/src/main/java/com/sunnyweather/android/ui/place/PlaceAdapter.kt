@@ -1,13 +1,17 @@
 package com.sunnyweather.android.ui.place
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.sunnyweather.android.databinding.PlaceItemBinding
 import com.sunnyweather.android.logic.model.Place
+import com.sunnyweather.android.ui.weather.WeatherActivity
 
-class PlaceAdapter(private val fragment: Fragment, private val placeList: List<Place>) : RecyclerView.Adapter<PlaceAdapter.ViewHolder>() {
+class PlaceAdapter(private val placeList: List<Place>) : RecyclerView.Adapter<PlaceAdapter.ViewHolder>() {
+
+    private var listener: ItemClickListener<Place>? = null
 
     inner class ViewHolder(binding: PlaceItemBinding) : RecyclerView.ViewHolder(binding.root) {
         val placeName = binding.placeName
@@ -15,7 +19,16 @@ class PlaceAdapter(private val fragment: Fragment, private val placeList: List<P
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(PlaceItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+        val holder = ViewHolder(PlaceItemBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+        holder.itemView.setOnClickListener {
+            listener?.let {
+                val index = holder.adapterPosition
+                if (index >= 0) {
+                    listener?.onItemClicked(index, placeList[index])
+                }
+            }
+        }
+        return holder
     }
 
     override fun getItemCount() = placeList.size
@@ -24,5 +37,14 @@ class PlaceAdapter(private val fragment: Fragment, private val placeList: List<P
         val place = placeList[position]
         holder.placeName.text = place.name
         holder.placeAddress.text = place.address
+    }
+
+    fun setItemClickListener(listener: ItemClickListener<Place>?) {
+        this.listener = listener
+    }
+
+    interface ItemClickListener<K> {
+
+        fun onItemClicked(position: Int, k: K)
     }
 }
