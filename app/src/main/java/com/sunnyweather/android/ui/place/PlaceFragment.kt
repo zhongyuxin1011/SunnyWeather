@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.sunnyweather.android.databinding.FragmentPlaceBinding
 import com.sunnyweather.android.extension.toast
 import com.sunnyweather.android.logic.model.Place
+import com.sunnyweather.android.ui.listener.ItemClickListener
 import com.sunnyweather.android.ui.weather.WeatherActivity
 
 class PlaceFragment : Fragment() {
@@ -24,6 +25,7 @@ class PlaceFragment : Fragment() {
         ViewModelProvider(this)[PlaceViewModel::class.java]
     }
     private lateinit var adapter: PlaceAdapter
+    private var extItemClickListener: ItemClickListener<Place>? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,7 +39,8 @@ class PlaceFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        if (viewModel.isPlaceSaved()) {
+        val activityName = activity?.javaClass?.simpleName ?: ""
+        if (activityName.contains("MainActivity") && viewModel.isPlaceSaved()) {
             val place = viewModel.getSavedPlace()
             val intent = Intent(context, WeatherActivity::class.java).apply {
                 putExtra("location_lng", place.location.lng)
@@ -51,14 +54,18 @@ class PlaceFragment : Fragment() {
 
         binding.recyclerView.layoutManager = LinearLayoutManager(context)
         adapter = PlaceAdapter(viewModel.placeList)
-        adapter.setItemClickListener(object : PlaceAdapter.ItemClickListener<Place> {
+        adapter.setItemClickListener(object : ItemClickListener<Place> {
             override fun onItemClicked(position: Int, place: Place) {
+                viewModel.savePlace(place)
+                if (extItemClickListener != null) {
+                    extItemClickListener?.onItemClicked(position, place)
+                    return
+                }
                 val intent = Intent(context, WeatherActivity::class.java).apply {
                     putExtra("location_lng", place.location.lng)
                     putExtra("location_lat", place.location.lat)
                     putExtra("place_name", place.name)
                 }
-                viewModel.savePlace(place)
                 startActivity(intent)
                 activity?.finish()
             }
@@ -96,5 +103,9 @@ class PlaceFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    fun setExtItemClickListener(listener: ItemClickListener<Place>) {
+        extItemClickListener = listener
     }
 }

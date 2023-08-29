@@ -1,17 +1,26 @@
 package com.sunnyweather.android.ui.weather
 
+import android.content.Context
 import android.graphics.Color
+import android.hardware.input.InputManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.sunnyweather.android.R
 import com.sunnyweather.android.databinding.ActivityWeatherBinding
 import com.sunnyweather.android.databinding.ForecastItemBinding
 import com.sunnyweather.android.extension.toast
+import com.sunnyweather.android.logic.model.Place
 import com.sunnyweather.android.logic.model.Weather
 import com.sunnyweather.android.logic.model.getSky
+import com.sunnyweather.android.ui.listener.ItemClickListener
+import com.sunnyweather.android.ui.place.PlaceFragment
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -29,6 +38,32 @@ class WeatherActivity : AppCompatActivity() {
 
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         window.statusBarColor = Color.TRANSPARENT
+        val typedValue = TypedValue()
+        theme.resolveAttribute(android.R.attr.colorPrimary, typedValue, true)
+        binding.swipeRefresh.setColorSchemeResources(typedValue.resourceId)
+
+        binding.now.navBtn.setOnClickListener {
+            binding.drawerLayout.openDrawer(GravityCompat.START)
+        }
+        binding.drawerLayout.addDrawerListener(object : DrawerListener {
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
+
+            }
+
+            override fun onDrawerOpened(drawerView: View) {
+
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                manager.hideSoftInputFromWindow(drawerView.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
+            }
+
+            override fun onDrawerStateChanged(newState: Int) {
+
+            }
+
+        })
 
         if (viewModel.locationLng.isEmpty()) {
             viewModel.locationLng = intent.getStringExtra("location_lng") ?: ""
@@ -47,8 +82,29 @@ class WeatherActivity : AppCompatActivity() {
                 "无法成功获取天气信息".toast()
                 it.exceptionOrNull()?.printStackTrace()
             }
+            binding.swipeRefresh.isRefreshing = false
         })
+        binding.swipeRefresh.setOnRefreshListener {
+            refreshWeather()
+        }
+        refreshWeather()
+
+        val placeFragment = supportFragmentManager.findFragmentById(R.id.placeFragment) as PlaceFragment
+        placeFragment.setExtItemClickListener(object : ItemClickListener<Place> {
+            override fun onItemClicked(position: Int, place: Place) {
+                binding.drawerLayout.closeDrawers()
+                viewModel.locationLng = place.location.lng
+                viewModel.locationLat = place.location.lat
+                viewModel.placeName = place.name
+                refreshWeather()
+            }
+
+        })
+    }
+
+    private fun refreshWeather() {
         viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat)
+        binding.swipeRefresh.isRefreshing = true
     }
 
     private fun showWeatherInfo(weather: Weather) {

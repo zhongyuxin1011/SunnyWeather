@@ -1,13 +1,11 @@
 package com.sunnyweather.android.ui.place
 
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.sunnyweather.android.databinding.PlaceItemBinding
 import com.sunnyweather.android.logic.model.Place
-import com.sunnyweather.android.ui.weather.WeatherActivity
+import com.sunnyweather.android.ui.listener.ItemClickListener
 
 class PlaceAdapter(private val placeList: List<Place>) : RecyclerView.Adapter<PlaceAdapter.ViewHolder>() {
 
@@ -41,10 +39,5 @@ class PlaceAdapter(private val placeList: List<Place>) : RecyclerView.Adapter<Pl
 
     fun setItemClickListener(listener: ItemClickListener<Place>?) {
         this.listener = listener
-    }
-
-    interface ItemClickListener<K> {
-
-        fun onItemClicked(position: Int, k: K)
     }
 }
